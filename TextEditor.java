@@ -4,6 +4,7 @@ import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.print.PrinterException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -22,7 +23,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
+import javax.swing.KeyStroke;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.undo.UndoManager;
 
 public class TextEditor extends JFrame implements ActionListener{
 	
@@ -47,7 +52,10 @@ public class TextEditor extends JFrame implements ActionListener{
 	JMenuItem copy = new JMenuItem("Copy");
 	JMenuItem paste = new JMenuItem("Paste");
 	JMenuItem selectAll = new JMenuItem("Select All");
+	JMenuItem undo = new JMenuItem("Undo");
+	JMenuItem redo = new JMenuItem("Redo");
 	
+	UndoManager manager;
 	JMenuItem about = new JMenuItem("About");
 	JFileChooser fileChooser;
 	Cursor cur;
@@ -57,6 +65,7 @@ public class TextEditor extends JFrame implements ActionListener{
 		setResizable(true);
 		setLocationRelativeTo(null);
 		
+		manager = new UndoManager();
 		cur = new Cursor(Cursor.HAND_CURSOR);
 		setCursor(cur);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -73,6 +82,8 @@ public class TextEditor extends JFrame implements ActionListener{
 		edit.add(copy);
 		edit.add(paste);
 		edit.add(selectAll);
+		edit.add(undo);
+		edit.add(redo);
 		
 		format.add(wordWrap);
 		help.add(about);
@@ -81,6 +92,7 @@ public class TextEditor extends JFrame implements ActionListener{
 		menuBar.add(edit);
 		menuBar.add(format);
 		menuBar.add(help);
+		
 		
 		setJMenuBar(menuBar);
 		
@@ -107,9 +119,32 @@ public class TextEditor extends JFrame implements ActionListener{
 		copy.addActionListener(this);
 		paste.addActionListener(this);
 		selectAll.addActionListener(this);
+		undo.addActionListener(this);
+		redo.addActionListener(this);
+		
 		
 		wordWrap.addActionListener(this);
 		about.addActionListener(this);		
+		
+		// creating shortcuts
+		newFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N,KeyEvent.CTRL_DOWN_MASK));
+		openFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,KeyEvent.CTRL_DOWN_MASK));
+		saveFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,KeyEvent.CTRL_DOWN_MASK));
+		printFile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P,KeyEvent.CTRL_DOWN_MASK));
+		exit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W,KeyEvent.CTRL_DOWN_MASK));
+		
+		cut.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X,KeyEvent.CTRL_DOWN_MASK));
+		copy.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C,KeyEvent.CTRL_DOWN_MASK));
+		paste.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V,KeyEvent.CTRL_DOWN_MASK));
+		selectAll.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A,KeyEvent.CTRL_DOWN_MASK));
+		undo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z,KeyEvent.CTRL_DOWN_MASK));
+		redo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z,ActionEvent.CTRL_MASK + ActionEvent.SHIFT_MASK));
+		
+		wordWrap.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q,KeyEvent.CTRL_DOWN_MASK));
+		
+		about.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I,KeyEvent.CTRL_DOWN_MASK));
+		
+		
 		
 		// file chooser configuration
 		fileChooser = new JFileChooser("C:\\");
@@ -127,6 +162,11 @@ public class TextEditor extends JFrame implements ActionListener{
 		
 		wordWrap.setSelected(true);
 
+		textArea.getDocument().addUndoableEditListener(new UndoableEditListener() {
+			public void undoableEditHappened(UndoableEditEvent e) {
+				manager.addEdit(e.getEdit());
+			}
+		});
 		
 		setVisible(true);
 		revalidate();
@@ -182,7 +222,6 @@ public class TextEditor extends JFrame implements ActionListener{
 			try {
 				textArea.print();
 			} catch (PrinterException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		}
@@ -203,6 +242,16 @@ public class TextEditor extends JFrame implements ActionListener{
 		}
 		else if(e.getActionCommand().equalsIgnoreCase("Select All")) {
 			textArea.selectAll();
+		}
+		else if(e.getActionCommand().equalsIgnoreCase("Undo")) {
+			try {
+				manager.undo();
+			} catch (Exception ex) {}
+		}
+		else if(e.getActionCommand().equalsIgnoreCase("Redo")) {
+			try {
+				manager.redo();
+			} catch (Exception ex) {}
 		}
 		else if(e.getActionCommand().equalsIgnoreCase("Word Wrap")) {
 			
