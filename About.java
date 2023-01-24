@@ -85,6 +85,4 @@ public class About extends JFrame implements ActionListener{
 	public static void main(String[] args) {
 		new About().setVisible(true);
 	}
-
-	
 }
